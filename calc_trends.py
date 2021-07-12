@@ -69,14 +69,27 @@ EBAS_BASE_FILTERS = dict(set_flags_nan   = True,
                          #data_level      = 2
                            framework       = ['EMEP*', 'ACTRIS*'])
 
-OBS_OUTPUT_DIR = 'obs_output'
-MODEL_OUTPUT_DIR = 'mod_output'
-#OBS_OUTPUT_DIR = '/home/eivindgw/testdata/obs_output'  #!!!!!! for testing
-#MODEL_OUTPUT_DIR = '/home/eivindgw/testdata/mod_output'  #!!!!!!! for testing
+# Folder where data repos are located. In this folder, there must already be located folders named
+# 'emep_trends_2021_data' and 'emep_trends_2021_data_relaxed'.
+PFOLDER_DATA_REPOS = '../'
+#PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
 
 DATA_FREQ = 'day'
 
+ISRELAXED = True
+
 if __name__ == '__main__':
+    if ISRELAXED:
+        DATAREPO_DIR = os.path.join(PFOLDER_DATA_REPOS, 'emep_trends_2021_data_relaxed')
+        RESAMPLE_CONSTRAINTS = RELAXED_RESAMPLE_CONSTRAINTS
+    else:
+        DATAREPO_DIR = os.path.join(PFOLDER_DATA_REPOS, 'emep_trends_2021_data')
+        RESAMPLE_CONSTRAINTS = DEFAULT_RESAMPLE_CONSTRAINTS
+    if not os.path.exists(DATAREPO_DIR):
+        raise IOError('Data repository folder "%s" does not exist' % DATAREPO_DIR)
+
+    OBS_OUTPUT_DIR = os.path.join(DATAREPO_DIR, 'obs_output')
+    MODEL_OUTPUT_DIR = os.path.join(DATAREPO_DIR, 'mod_output')
     if not os.path.exists(OBS_OUTPUT_DIR):
         os.mkdir(OBS_OUTPUT_DIR)
     if not os.path.exists(MODEL_OUTPUT_DIR):
@@ -116,14 +129,10 @@ if __name__ == '__main__':
         var_info = {var: {'units': EMEP_VAR_UNITS[var], 'data_freq': DATA_FREQ}}
         mdata = read_model(var, get_modelfile, start_yr, stop_yr, var_info, CALCULATE_HOW)
 
-        #remove:
-        # sitedata = data.to_station_data_all(var, start=int(start_yr)-1, stop=int(stop_yr)+1,
-        #                                     resample_how=DEFAULT_RESAMPLE_HOW,
-        #                                     min_num_obs=DEFAULT_RESAMPLE_CONSTRAINTS)
         coldata = pya.colocation.colocate_gridded_ungridded(
                     mdata, data, ts_type='monthly', start=start_yr, stop=stop_yr,
                     colocate_time=True, resample_how=DEFAULT_RESAMPLE_HOW,
-                    min_num_obs=DEFAULT_RESAMPLE_CONSTRAINTS
+                    min_num_obs=RESAMPLE_CONSTRAINTS
                     )
 
         #loop over stations in colcated data
@@ -143,7 +152,7 @@ if __name__ == '__main__':
             sitedata_for_meta = data.to_station_data(
                 site, var, start=int(start_yr)-1, stop=int(stop_yr)+1,
                 resample_how=DEFAULT_RESAMPLE_HOW,
-                min_num_obs=DEFAULT_RESAMPLE_CONSTRAINTS
+                min_num_obs=RESAMPLE_CONSTRAINTS
             )
 
             site_id = sitedata_for_meta.station_id
@@ -169,14 +178,6 @@ if __name__ == '__main__':
                              sitedata_for_meta.framework,
                              sitedata_for_meta.var_info[var]['matrix']
                              ])
-
-            # if tst == 'daily':
-            #     site = site.resample_time(
-            #         var_name=var,
-            #         ts_type='monthly',
-            #         min_num_obs=DEFAULT_RESAMPLE_CONSTRAINTS,
-            #         how=DEFAULT_RESAMPLE_HOW)
-            #     tst = 'monthly'
 
             te = pya.trends_engine.TrendsEngine
 
