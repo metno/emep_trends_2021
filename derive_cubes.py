@@ -59,7 +59,7 @@ def conc_from_vmr_STP(cube):
         with 'conc' instead of 'vmr' and the units are also updated.
     """
     R = 287.058  # gas constant of dry air
-    standard_T = 293
+    standard_T = 288.15
     standard_P = 101300
 
     cube_name = str(cube.var_name)
