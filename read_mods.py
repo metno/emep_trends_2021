@@ -90,16 +90,8 @@ def get_modelfile(year, data_freq):
     """
     Function to use as input argument 'getfile' in function read_model
     """
-    if year < 2017 and year >= 1999:
-        folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2019_REPORTING/TRENDS/{year}'
-    elif year == 2017:
-        folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2019_REPORTING/EMEP01_L20EC_rv4_33.2017'
-    elif year == 2018:
-        folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2020_REPORTING/EMEP01_rv4_35_2018_emepCRef2'
-        #folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2021_REPORTING/TRENDS/2018'
-    elif year == 2019:
-        folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2020_REPORTING/EMEP01_rv4_35_2019_tnoCRef2'
-        #folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2021_REPORTING/TRENDS/2019'
+    if year >= 2000 and year <= 2019:
+        folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2021_REPORTING/TRENDS/{year}'
     else:
         raise ValueError(f'Location of model data for year {year} in not known')
     if data_freq not in ['hour', 'day', 'month']:
