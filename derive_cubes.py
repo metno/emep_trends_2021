@@ -205,9 +205,9 @@ def calc_concNhno3(conchno3):
     return concNhno3
 
 
-def calc_concNno3pm25(concno3f, concno3c):
+def calc_concno3pm25(concno3f, concno3c):
     """
-    Calculate total nitrate in PM2.5 in ug N m-3 from fine and coarse in ug/m3
+    Calculate total nitrate in PM2.5 in ug/m3 from fine and coarse
 
     Parameters
     ----------
@@ -222,14 +222,28 @@ def calc_concNno3pm25(concno3f, concno3c):
     Returns
     -------
     iris.cube.Cube
-        NO3- concentration in particles smaller than 2.5 um, in ug N m-3
+        NO3- concentration in particles smaller than 2.5 um, in ug m-3
     """
     assert concno3f.units == 'ug/m3'
     assert concno3c.units == 'ug/m3'
 
-    fac = M_N / (M_N + 3*M_O)
     frac_no3c_pm25 = 0.134
     concno3pm25 = add_cubes(concno3f, concno3c*frac_no3c_pm25)
+    concno3pm25.var_name = 'concno3pm25'
+    concno3pm25.units = 'ug/m3'
+    return concno3pm25
+
+
+def calc_concNno3pm25(concno3f, concno3c):
+    """
+    Calculate total nitrate in PM2.5 in ug N m-3 from fine and coarse in ug/m3
+
+    See doc-string of calc_concno3pm25. The only difference is that the
+    unit of the returned data is ug N m-3.
+    """
+    concno3pm25 = calc_concno3pm25(concno3f, concno3c)
+
+    fac = M_N / (M_N + 3*M_O)
     concNno3pm25 = concno3pm25*fac
     concNno3pm25.var_name = 'concNno3pm25'
     concNno3pm25.units = 'ug N m-3'
@@ -258,3 +272,23 @@ def calc_concNno3pm10(concno3f, concno3c):
     concNno3pm10.var_name = 'concNno3pm10'
     concNno3pm10.units = 'ug N m-3'
     return concNno3pm10
+
+
+def fix_ecunits(concCecpm25):
+    """
+    Set units of elemental carbon to ug C m-2 instead of ug m-2.
+
+    Elemental carbon is assumed to be pure C, so no modification of the values
+    of the data are needed. Therefore no new object is created. Modification of
+    the unit string is done inplace.
+
+    Parameters
+    ----------
+    concCecpm25 : iris.cube.Cube
+        Cube of data of elemental carbon in units of ug/m3 or ug C m-3.
+        The units will be modified inplace. The same object is also returned.
+    """
+    assert(concCecpm25.var_name == 'concCecpm25')
+    assert(concCecpm25.units in ['ug/m3', 'ug C m-3'])
+    concCecpm25.units = 'ug C m-3'
+    return concCecpm25

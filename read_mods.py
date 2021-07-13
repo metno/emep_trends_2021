@@ -12,7 +12,10 @@ import pyaerocom as pya
 
 import derive_cubes as der
 
-# Units that the variables from EMEP should have, after calculation
+# Units that the variables from EMEP should have, when returned by read_mods
+# (this may differ from the unit in the EMEP output file, since some unit
+# transformation may be done in the calculate_how-step or in the final
+# GriddedData initialization)
 EMEP_VAR_UNITS = {
     'concno2': 'ug m-3',
     'concso2': 'ug m-3',
@@ -33,15 +36,19 @@ EMEP_VAR_UNITS = {
     'concNno3pm10': 'ug N m-3',
     'concsspm25': 'ug m-3',
     'concss': 'ug m-3',
-    'concCecpm25': 'ug C m-3',  # not working, lack equivalent variable in pyaerocom with units ug/m3, which is what model gives
-    'concCocpm25': 'ug C m-3',  # not working, captialization problem in pyaerocom
+    'concCecpm25': 'ug C m-3',
+    'concCocpm25': 'ug C m-3',
     'conchcho': 'ug m-3',
-    'wetoxs': 'mg S m-3',  # crashes due to model units "mgS/m2" not accepted by cf_units
-    'wetrdn': 'mg N m-3',  # crashes due to model units "mgN/m2" not accepted by cf_units
-    'wetoxn': 'mg N m-3',  # crashes, same reason as wetrdn
+    'wetoxs': 'mg S m-2 d-1',
+    'wetrdn': 'mg N m-2 d-1',
+    'wetoxn': 'mg N m-2 d-1',
     # - skipping precipiation for now
     'vmrisop': 'ppb',
-    'concglyoxal': 'ug m-3'
+    'concglyoxal': 'ug m-3',
+    # variables only used in pm25 speciation
+    'concnh4': 'ug m-3',
+    'concno3pm25': 'ug m-3',
+    'concocpm25': 'ug m-3'
 }
 
 CALCULATE_HOW = {
@@ -61,10 +68,14 @@ CALCULATE_HOW = {
                         'function': der.calc_concNno3pm25},
     'concNno3pm10': {'req_vars': ['concno3f', 'concno3c'],
                         'function': der.calc_concNno3pm10},
+    'concno3pm25': {'req_vars': ['concno3f', 'concno3c'],
+                    'function': der.calc_concno3pm25},
     'conchcho': {'req_vars': ['vmrhcho'],
                     'function': der.conc_from_vmr_STP},
     'concglyoxal': {'req_vars': ['vmrglyoxal'],
-                    'function': der.conc_from_vmr_STP}
+                    'function': der.conc_from_vmr_STP},
+    'concCecpm25': {'req_vars': ['concCecpm25'],
+                    'function': der.fix_ecunits}
 }
 
 HOSTNAME = socket.gethostname()
@@ -159,7 +170,6 @@ def read_model(var, getfile, start_yr, stop_yr, var_info, calc_how={}):
 
         temp_data = []
         for req_var in calculate_how['req_vars']:
-            print('req_var=', req_var)
             temp = reader.read_var(req_var)
             tcoord = temp.cube.coords('time')[0]
             if tcoord.units.calendar == 'proleptic_gregorian':
@@ -180,12 +190,11 @@ def read_model(var, getfile, start_yr, stop_yr, var_info, calc_how={}):
 
 
 if __name__ == '__main__':
-    import derive_cubes as der
 
-    start_yr = 2018
-    stop_yr = 2019
+    start_yr = 2019
+    stop_yr = 2020
 
-    var = 'concpm10'
+    var = 'concNno3pm25'
     dfreq = 'month'
 
     var_info = {var: {'units': EMEP_VAR_UNITS[var], 'data_freq': dfreq}}
