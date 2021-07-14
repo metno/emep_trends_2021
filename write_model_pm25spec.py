@@ -7,10 +7,11 @@ import pandas as pd
 from read_mods import read_model, EMEP_VAR_UNITS, CALCULATE_HOW, get_modelfile
 from helper_functions import clear_output
 
+# Provide the range of years to include in the time series (both FIRST_YEAR and LAST_YEAR are included)
 FIRST_YR = 2010
 LAST_YR = 2019
-#FIRST_YR = 2018  # for testing
-#LAST_YR = 2019  # for testing
+#FIRST_YR = 2018  # !!!!!!!!!!!! for testing
+#LAST_YR = 2019  # !!!!!!!!!!!! for testing
 
 EBAS_VARS = [
              'concpm25',
@@ -18,18 +19,19 @@ EBAS_VARS = [
              'concnh4',
              'concno3pm25',
              'concCecpm25',
-             'concocpm25'
+             'concoaf',
+             'concCocpm25'
             ]
 
-FOLDER_DATA_REPOS = '../'
-PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
+PFOLDER_DATA_REPOS = '../'
+#PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
 
 # Location and column specifications for the input file with station metadata
 FILE_INDATA = 'input_data/sites_organics_trends_2010-2019.dat'
 INDATA_COLSPECS = [(0, 7), (8, 48), (49, 59), (60, 71), (72, 79)]
 
 DATA_FREQ = 'day'
-#DATA_FREQ = 'month'  # for testing
+#DATA_FREQ = 'month'  # !!!!!!!!!!!!!!!! for testing
 
 DATA_FREQ_IN_FILENAME = {'day': 'daily', 'month': 'monthly', 'year': 'yearly'}
 

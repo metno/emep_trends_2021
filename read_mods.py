@@ -48,7 +48,7 @@ EMEP_VAR_UNITS = {
     # variables only used in pm25 speciation
     'concnh4': 'ug m-3',
     'concno3pm25': 'ug m-3',
-    'concocpm25': 'ug m-3'
+    'concoaf': 'ug m-3'
 }
 
 CALCULATE_HOW = {
