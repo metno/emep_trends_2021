@@ -9,6 +9,7 @@ import os, socket, tqdm
 import iris
 import cf_units
 import pyaerocom as pya
+import warnings
 
 import derive_cubes as der
 
@@ -90,10 +91,7 @@ def get_modelfile(year, data_freq):
     """
     Function to use as input argument 'getfile' in function read_model
     """
-    if year >= 2000 and year <= 2019:
-        folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2021_REPORTING/TRENDS/{year}'
-    else:
-        raise ValueError(f'Location of model data for year {year} in not known')
+    folder = f'{preface}/lustre/storeB/project/fou/kl/emep/ModelRuns/2021_REPORTING/TRENDS/{year}'
     if data_freq not in ['hour', 'day', 'month']:
         raise ValueError('data_freq must be "hour", "day" or "month"')
     return os.path.join(folder, f'Base_{data_freq}.nc')
@@ -156,9 +154,12 @@ def read_model(var, getfile, start_yr, stop_yr, var_info, calc_how={}):
     years = range(int(start_yr), int(stop_yr))
 
     for year in tqdm.tqdm(years, desc=var):
-        data_id = getfile(year, data_freq)
+        infile = getfile(year, data_freq)
+        if not os.path.exists(infile):
+            warnings.warn('No model data found for year %d. File %s not found' % (year, infile))
+            continue
 
-        reader = pya.io.ReadMscwCtm(data_id)
+        reader = pya.io.ReadMscwCtm(infile)
 
         temp_data = []
         for req_var in calculate_how['req_vars']:
