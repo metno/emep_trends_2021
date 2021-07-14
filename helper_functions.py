@@ -18,7 +18,7 @@ def delete_outdated_output(outdir, varlist):
 
 
 def clear_output(outdir, var):
-    files = glob.glob(f'{outdir}/*{var}*.csv')
+    files = glob.glob(f'{outdir}/*_{var}.csv')
     if len(files) > 0:
         print(f'delete output for {var} in {outdir}')
     for file in files:

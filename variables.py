@@ -14,7 +14,6 @@ ALL_EBAS_VARS = ['concno2',
                  'vmrc2h4',
                  'concpm25',
                  'concpm10',
-                 'vmro3',
                  'vmro3max',  # NB: EBAS variable is vmro3, but it is called vmro3max after resampled to daily max
                  'concso4',
                  'concNtno3',
