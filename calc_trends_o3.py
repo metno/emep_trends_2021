@@ -10,7 +10,7 @@ import pyaerocom as pya
 
 from read_mods import read_model, get_modelfile, EMEP_VAR_UNITS
 from helper_functions import (clear_output, delete_outdated_output,
-                              get_first_last_year)
+                              get_years_to_read)
 
 from variables import ALL_EBAS_VARS
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
     delete_outdated_output(OBS_OUTPUT_DIR, ALL_EBAS_VARS)
     delete_outdated_output(MODEL_OUTPUT_DIR, ALL_EBAS_VARS)
 
-    start_yr, stop_yr = get_first_last_year(PERIODS)
+    start_yr, stop_yr = get_years_to_read(PERIODS)
     #start_yr = '2017'; stop_yr = '2020'  #!!!!!!!!!! for testing
     print(start_yr, stop_yr)
 

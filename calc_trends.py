@@ -12,7 +12,7 @@ import pyaerocom as pya
 from pyaerocom.trends_helpers import SEASONS
 
 from helper_functions import (delete_outdated_output, clear_output,
-                              get_first_last_year)
+                              get_years_to_read)
 from read_mods import read_model, get_modelfile, CALCULATE_HOW, EMEP_VAR_UNITS
 import derive_cubes as der
 
@@ -43,17 +43,17 @@ EBAS_VARS = [
             # 'vmrc2h6',
             # 'vmrc2h4',
             # 'concpm25',
-             'concpm10',
+            # 'concpm10',
             # 'concso4',
-            #'concNtno3',
+            # 'concNtno3',
             # 'concNtnh',
             # 'concNnh3',
             # 'concNnh4',
             # 'concNhno3',
             # 'concNno3pm25',
             # 'concNno3pm10',
-            # 'concsspm25',
-            # 'concsspm10',
+             'concsspm25',
+            # 'concss',
             # 'concCecpm25',
             # 'concCocpm25',
             # 'conchcho',
@@ -62,21 +62,20 @@ EBAS_VARS = [
             # 'wetoxn',
             # 'pr',
             # 'vmrisop',
-            # 'concglyoxal',
-            # 'conchcho',
+            # 'concglyoxal'
             ]
 EBAS_BASE_FILTERS = dict(set_flags_nan   = True,
                          #data_level      = 2
-                           framework       = ['EMEP*', 'ACTRIS*'])
+                         framework       = ['EMEP*', 'ACTRIS*'])
 
 # Folder where data repos are located. In this folder, there must already be located folders named
 # 'emep_trends_2021_data' and 'emep_trends_2021_data_relaxed'.
 PFOLDER_DATA_REPOS = '../'
-#PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
+PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
 
 DATA_FREQ = 'day'
 
-ISRELAXED = True
+ISRELAXED = False
 
 if __name__ == '__main__':
     if ISRELAXED:
@@ -105,14 +104,14 @@ if __name__ == '__main__':
     delete_outdated_output(OBS_OUTPUT_DIR, ALL_EBAS_VARS)
     delete_outdated_output(MODEL_OUTPUT_DIR, ALL_EBAS_VARS)
 
-    start_yr, stop_yr = get_first_last_year(PERIODS)
+    start_yr, stop_yr = get_years_to_read(PERIODS)
     #start_yr = '2015'; stop_yr = '2017'  #!!!!!!!!!! for testing
     print(start_yr, stop_yr)
 
     oreader = pya.io.ReadUngridded(EBAS_ID, data_dirs=data_dir)
 
     for var in EBAS_VARS:
-        print('var=', var)
+        print('\nvar=', var)
         if var not in ALL_EBAS_VARS:
             raise ValueError('invalid variable ', var, '. Please register'
                              'in variables.py')
@@ -150,7 +149,7 @@ if __name__ == '__main__':
             mod_subdir = os.path.join(MODEL_OUTPUT_DIR, f'data_{var}')
 
             sitedata_for_meta = data.to_station_data(
-                site, var, start=int(start_yr)-1, stop=int(stop_yr)+1,
+                site, var, start=int(start_yr), stop=int(stop_yr)+1,
                 resample_how=DEFAULT_RESAMPLE_HOW,
                 min_num_obs=RESAMPLE_CONSTRAINTS
             )
@@ -181,26 +180,25 @@ if __name__ == '__main__':
 
             te = pya.trends_engine.TrendsEngine
 
-
             for (start, stop, min_yrs) in PERIODS:
                 for seas in SEASONS:
                     obs_trend = te.compute_trend(obs_ts, tst, start, stop, min_yrs,
-                                             seas)
+                                                 seas)
 
                     obs_row = [var, site_id, obs_trend['period'], obs_trend['season'],
-                           obs_trend[f'slp_{start}'], obs_trend[f'slp_{start}_err'],
-                           obs_trend[f'reg0_{start}'], obs_trend['m'], obs_trend['m_err'],
-                           obs_trend['n'], obs_trend['pval'], unit]
+                               obs_trend[f'slp_{start}'], obs_trend[f'slp_{start}_err'],
+                               obs_trend[f'reg0_{start}'], obs_trend['m'], obs_trend['m_err'],
+                               obs_trend['n'], obs_trend['pval'], unit]
 
                     obs_trendtab.append(obs_row)
 
                     mod_trend = te.compute_trend(mod_ts, tst, start, stop, min_yrs,
-                                             seas)
+                                                 seas)
 
                     mod_row = [var, site_id, mod_trend['period'], mod_trend['season'],
-                           mod_trend[f'slp_{start}'], mod_trend[f'slp_{start}_err'],
-                           mod_trend[f'reg0_{start}'], mod_trend['m'], mod_trend['m_err'],
-                           mod_trend['n'], mod_trend['pval'], unit]
+                               mod_trend[f'slp_{start}'], mod_trend[f'slp_{start}_err'],
+                               mod_trend[f'reg0_{start}'], mod_trend['m'], mod_trend['m_err'],
+                               mod_trend['n'], mod_trend['pval'], unit]
 
                     mod_trendtab.append(mod_row)
 
@@ -229,34 +227,34 @@ if __name__ == '__main__':
         metadf.to_csv(metaout)
 
         obs_trenddf = pd.DataFrame(obs_trendtab,
-                               columns=['var',
-                                       'station_id',
-                                       'period',
-                                       'season',
-                                       'trend [%/yr]',
-                                       'trend err [%/yr]',
-                                       'yoffs',
-                                       'slope',
-                                       'slope err',
-                                       'num yrs',
-                                       'pval',
-                                       'unit'
-                                       ])
+                                   columns=['var',
+                                            'station_id',
+                                            'period',
+                                            'season',
+                                            'trend [%/yr]',
+                                            'trend err [%/yr]',
+                                            'yoffs',
+                                            'slope',
+                                            'slope err',
+                                            'num yrs',
+                                            'pval',
+                                            'unit'
+                                            ])
 
         mod_trenddf = pd.DataFrame(mod_trendtab,
-                               columns=['var',
-                                       'station_id',
-                                       'period',
-                                       'season',
-                                       'trend [%/yr]',
-                                       'trend err [%/yr]',
-                                       'yoffs',
-                                       'slope',
-                                       'slope err',
-                                       'num yrs',
-                                       'pval',
-                                       'unit'
-                                       ])
+                                   columns=['var',
+                                            'station_id',
+                                            'period',
+                                            'season',
+                                            'trend [%/yr]',
+                                            'trend err [%/yr]',
+                                            'yoffs',
+                                            'slope',
+                                            'slope err',
+                                            'num yrs',
+                                            'pval',
+                                            'unit'
+                                            ])
 
         obs_trendout = os.path.join(OBS_OUTPUT_DIR, f'trends_{var}.csv')
         obs_trenddf.to_csv(obs_trendout)
