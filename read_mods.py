@@ -43,7 +43,7 @@ EMEP_VAR_UNITS = {
     'wetoxs': 'mg S m-2 d-1',
     'wetrdn': 'mg N m-2 d-1',
     'wetoxn': 'mg N m-2 d-1',
-    # - skipping precipiation for now
+    'pr': 'mm',
     'vmrisop': 'ppb',
     'concglyoxal': 'ug m-3',
     # variables only used in pm25 speciation
@@ -187,7 +187,7 @@ if __name__ == '__main__':
     start_yr = 2019
     stop_yr = 2020
 
-    var = 'concNno3pm25'
+    var = 'pr'
     dfreq = 'month'
 
     var_info = {var: {'units': EMEP_VAR_UNITS[var], 'data_freq': dfreq}}

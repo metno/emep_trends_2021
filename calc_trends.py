@@ -60,7 +60,6 @@ EBAS_VARS = [
             # 'wetoxs',
             # 'wetrdn',
             # 'wetoxn',
-            # 'pr',
             # 'vmrisop',
             # 'concglyoxal'
             ]
