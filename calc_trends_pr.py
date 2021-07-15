@@ -216,7 +216,7 @@ if __name__ == '__main__':
                                         'unit'
                                         ])
 
-    obs_trendout = os.path.join(OBS_OUTPUT_DIR, f'trends{VAR}.csv')
+    obs_trendout = os.path.join(OBS_OUTPUT_DIR, f'trends_{VAR}.csv')
     obs_trenddf.to_csv(obs_trendout)
 
     mod_trendout = os.path.join(MODEL_OUTPUT_DIR, f'trends_{VAR}.csv')
