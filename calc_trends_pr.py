@@ -8,35 +8,25 @@ import os, tqdm
 import numpy as np
 import pandas as pd
 import pyaerocom as pya
-from pyaerocom.trends_helpers import SEASONS
 
 from read_mods import read_model, EMEP_VAR_UNITS, get_modelfile
 from helper_functions import clear_output, delete_outdated_output, get_years_to_read
+from constants import PERIODS, EBAS_ID, EBAS_LOCAL, SEASONS
 from variables import ALL_EBAS_VARS
-
-SEASONS = ['all'] + list(SEASONS)
-
-EBAS_LOCAL = '/home/jonasg/MyPyaerocom/data/obsdata/EBASMultiColumn/data'
-EBAS_ID = 'EBASMC'
 
 RESAMPLE_HOW = 'sum'
 
 RESAMPLE_CONSTRAINTS = dict(monthly= dict(daily=21),
                             daily=   dict(hourly=18))
 
-PERIODS = [(2000, 2019, 14),
-           (2000, 2010, 7),
-           (2010, 2019, 7),
-           (2005, 2019, 10)]
-
 EBAS_BASE_FILTERS = dict(set_flags_nan   = True,
                          #data_level      = 2
                          framework       = ['*EMEP*', '*ACTRIS*'])
 
+VAR = 'pr'
+
 PFOLDER_DATA_REPOS = '../'
 #PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
-
-VAR = 'pr'
 
 if __name__ == '__main__':
     DATAREPO_DIR = os.path.join(PFOLDER_DATA_REPOS, 'emep_trends_2021_data')

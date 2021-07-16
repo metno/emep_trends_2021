@@ -9,19 +9,12 @@ import os, socket, tqdm
 import numpy as np
 import pandas as pd
 import pyaerocom as pya
-from pyaerocom.trends_helpers import SEASONS
 
 from helper_functions import (delete_outdated_output, clear_output,
                               get_years_to_read)
 from read_mods import read_model, get_modelfile, CALCULATE_HOW, EMEP_VAR_UNITS
-import derive_cubes as der
-
 from variables import ALL_EBAS_VARS
-
-SEASONS = ['all'] + list(SEASONS)
-
-EBAS_LOCAL = '/home/jonasg/MyPyaerocom/data/obsdata/EBASMultiColumn/data'
-EBAS_ID = 'EBASMC'
+from constants import PERIODS, EBAS_ID, EBAS_LOCAL, SEASONS
 
 DEFAULT_RESAMPLE_CONSTRAINTS = dict(monthly     =   dict(daily      = 21, weekly = 3),
                                     daily       =   dict(hourly     = 18))
@@ -30,11 +23,6 @@ RELAXED_RESAMPLE_CONSTRAINTS = dict(monthly     =   dict(daily      = 4, weekly 
                                     daily       =   dict(hourly     = 18))
 
 DEFAULT_RESAMPLE_HOW = 'mean'
-
-PERIODS = [(2000, 2019, 14),
-           (2000, 2010, 7),
-           (2010, 2019, 7),
-           (2005, 2019, 10)]
 
 EBAS_VARS = [
             # 'concno2',
@@ -104,7 +92,7 @@ if __name__ == '__main__':
     delete_outdated_output(MODEL_OUTPUT_DIR, ALL_EBAS_VARS)
 
     start_yr, stop_yr = get_years_to_read(PERIODS)
-    #start_yr = '2015'; stop_yr = '2017'  #!!!!!!!!!! for testing
+    #start_yr = '2015'; stop_yr = '2016'  #!!!!!!!!!! for testing
     print(start_yr, stop_yr)
 
     oreader = pya.io.ReadUngridded(EBAS_ID, data_dirs=data_dir)

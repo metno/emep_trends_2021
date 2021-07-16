@@ -11,11 +11,8 @@ import pyaerocom as pya
 from read_mods import read_model, get_modelfile, EMEP_VAR_UNITS
 from helper_functions import (clear_output, delete_outdated_output,
                               get_years_to_read)
-
+from constants import PERIODS, EBAS_ID, EBAS_LOCAL
 from variables import ALL_EBAS_VARS
-
-EBAS_LOCAL = '/home/jonasg/MyPyaerocom/data/obsdata/EBASMultiColumn/data'
-EBAS_ID = 'EBASMC'
 
 # email with Sverre and David on 22 June 2021
 DEFAULT_RESAMPLE_CONSTRAINTS = dict(yearly     =   dict(daily      = 330),
@@ -46,12 +43,6 @@ def get_rs_how(percentile):
     rs_how['yearly'] = dict(daily=f'{percentile}percentile')
     return rs_how
 
-
-# analysis periods and minimum no. of years required for trends retrieval
-PERIODS = [(2000, 2019, 14),
-           (2000, 2010, 7),
-           (2010, 2019, 7),
-           (2005, 2019, 10)]
 
 # variable name in EBAS for original hourly ozone
 VAR_ORIG = 'vmro3'
@@ -95,7 +86,7 @@ if __name__ == '__main__':
     delete_outdated_output(MODEL_OUTPUT_DIR, ALL_EBAS_VARS)
 
     start_yr, stop_yr = get_years_to_read(PERIODS)
-    #start_yr = '2017'; stop_yr = '2020'  #!!!!!!!!!! for testing
+    #start_yr = '2017'; stop_yr = '2018'  #!!!!!!!!!! for testing
     print(start_yr, stop_yr)
 
     oreader = pya.io.ReadUngridded(EBAS_ID, data_dirs=data_dir)
