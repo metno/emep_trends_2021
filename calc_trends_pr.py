@@ -31,7 +31,7 @@ PERIODS = [(2000, 2019, 14),
 
 EBAS_BASE_FILTERS = dict(set_flags_nan   = True,
                          #data_level      = 2
-                         framework       = ['EMEP*', 'ACTRIS*'])
+                         framework       = ['*EMEP*', '*ACTRIS*'])
 
 PFOLDER_DATA_REPOS = '../'
 #PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing

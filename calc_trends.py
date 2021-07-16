@@ -38,7 +38,7 @@ PERIODS = [(2000, 2019, 14),
 
 EBAS_VARS = [
             # 'concno2',
-            # 'concso2',
+             'concso2',
             # 'concco',
             # 'vmrc2h6',
             # 'vmrc2h4',
@@ -52,7 +52,7 @@ EBAS_VARS = [
             # 'concNhno3',
             # 'concNno3pm25',
             # 'concNno3pm10',
-             'concsspm25',
+            # 'concsspm25',
             # 'concss',
             # 'concCecpm25',
             # 'concCocpm25',
@@ -65,12 +65,12 @@ EBAS_VARS = [
             ]
 EBAS_BASE_FILTERS = dict(set_flags_nan   = True,
                          #data_level      = 2
-                         framework       = ['EMEP*', 'ACTRIS*'])
+                         framework       = ['*EMEP*', '*ACTRIS*'])
 
 # Folder where data repos are located. In this folder, there must already be located folders named
 # 'emep_trends_2021_data' and 'emep_trends_2021_data_relaxed'.
 PFOLDER_DATA_REPOS = '../'
-PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
+#PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
 
 DATA_FREQ = 'day'
 

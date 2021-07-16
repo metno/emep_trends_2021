@@ -61,7 +61,7 @@ VAR_DMAX = 'vmro3max'
 # QC filters for EBAS data
 EBAS_BASE_FILTERS = dict(set_flags_nan   = True,
                          #data_level      = 2,
-                         framework       = ['EMEP*', 'ACTRIS*'],
+                         framework       = ['*EMEP*', '*ACTRIS*'],
                          ts_type         = 'hourly')
 
 
