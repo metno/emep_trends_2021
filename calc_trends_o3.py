@@ -158,7 +158,7 @@ if __name__ == '__main__':
         os.makedirs(obs_subdir, exist_ok=True)
         os.makedirs(mod_subdir, exist_ok=True)
 
-        fname = f'{VAR_DMAX}_{site_id}_{tst}.csv'
+        fname = f'data_{VAR_DMAX}_{site_id}_{tst}.csv'
 
         obs_siteout = os.path.join(obs_subdir, fname)
         obs_ts.to_csv(obs_siteout)
