@@ -43,7 +43,6 @@ EMEP_VAR_UNITS = {
     'wetoxs': 'mg S m-2 d-1',
     'wetrdn': 'mg N m-2 d-1',
     'wetoxn': 'mg N m-2 d-1',
-    'pr': 'mm',
     'vmrisop': 'ppb',
     'concglyoxal': 'ug m-3',
     # variables only used in pm25 speciation

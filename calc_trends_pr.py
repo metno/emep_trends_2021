@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pyaerocom as pya
 
-from read_mods import read_model, EMEP_VAR_UNITS, get_modelfile
+from read_mods import read_model, get_modelfile
 from helper_functions import clear_output, delete_outdated_output, get_years_to_read
 from constants import PERIODS, EBAS_ID, EBAS_LOCAL, SEASONS
 from variables import ALL_EBAS_VARS
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     data = data.apply_filters(**EBAS_BASE_FILTERS)
 
     # Read precipitation from daily model output
-    var_info = {VAR: {'units': EMEP_VAR_UNITS[VAR], 'data_freq': 'day'}}
+    var_info = {VAR: {'units': 'mm', 'data_freq': 'day'}}
     mdata = read_model(VAR, get_modelfile, start_yr, stop_yr, var_info)
 
     # Colocate model and observations at monthly resolution
@@ -91,6 +91,11 @@ if __name__ == '__main__':
 
         obs_site = coldata.data.sel(station_name=site).isel(data_source=0).to_series()
         mod_site = coldata.data.sel(station_name=site).isel(data_source=1).to_series()
+
+        # invalidate model at months with no observed monthly mean
+        noobs = np.isnan(obs_site.values)
+        mod_site = mod_site.where(~noobs, other=np.nan)
+
         obs_ts = obs_site.loc[start_yr:stop_yr]
         mod_ts = mod_site.loc[start_yr:stop_yr]
         if len(obs_ts) == 0 or np.isnan(obs_ts).all(): # skip
@@ -103,6 +108,8 @@ if __name__ == '__main__':
             resample_how=RESAMPLE_HOW,
             min_num_obs=RESAMPLE_CONSTRAINTS
         )
+        # Set unit to mm month-1 since this is the result of the summing in the colocated data
+        coldata_unit = 'mm month-1'
 
         site_id = sitedata_for_meta.station_id
         os.makedirs(obs_subdir, exist_ok=True)
@@ -115,14 +122,14 @@ if __name__ == '__main__':
         mod_siteout = os.path.join(mod_subdir, fname)
         mod_ts.to_csv(mod_siteout)
 
-        unit = sitedata_for_meta.get_unit(VAR)
+        #unit = sitedata_for_meta.get_unit(VAR)  # don't use this, as it is just mm
         sitemeta.append([VAR,
                          site_id,
                          sitedata_for_meta.station_name,
                          sitedata_for_meta.latitude,
                          sitedata_for_meta.longitude,
                          sitedata_for_meta.altitude,
-                         unit,
+                         coldata_unit,
                          tst,
                          sitedata_for_meta.framework,
                          sitedata_for_meta.var_info[VAR]['matrix']
@@ -138,7 +145,7 @@ if __name__ == '__main__':
                 obs_row = [VAR, site_id, obs_trend['period'], obs_trend['season'],
                            obs_trend[f'slp_{start}'], obs_trend[f'slp_{start}_err'],
                            obs_trend[f'reg0_{start}'], obs_trend['m'], obs_trend['m_err'],
-                           obs_trend['n'], obs_trend['pval'], unit]
+                           obs_trend['n'], obs_trend['pval'], coldata_unit]
 
                 obs_trendtab.append(obs_row)
 
@@ -148,7 +155,7 @@ if __name__ == '__main__':
                 mod_row = [VAR, site_id, mod_trend['period'], mod_trend['season'],
                            mod_trend[f'slp_{start}'], mod_trend[f'slp_{start}_err'],
                            mod_trend[f'reg0_{start}'], mod_trend['m'], mod_trend['m_err'],
-                           mod_trend['n'], mod_trend['pval'], unit]
+                           mod_trend['n'], mod_trend['pval'], coldata_unit]
 
                 mod_trendtab.append(mod_row)
 
