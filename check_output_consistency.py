@@ -62,9 +62,9 @@ def check_consistency(var_name, data_repo_folder):
         df_trend = pd.read_csv(trends_file, sep=',')
         # Find monthly data files
         if var_name == 'vmro3max':
-            sstr_dayfiles = os.path.join(data_repo_folder, subf, 'data_%s/%s_*_daily.csv' % (var_name, var_name))
+            sstr_dayfiles = os.path.join(data_repo_folder, subf, 'data_%s/data_%s_*_daily.csv' % (var_name, var_name))
             dayfiles = glob.glob(sstr_dayfiles)
-            ind0 = lenvn + 1
+            ind0 = lenvn + 6
             ind1 = -10
             station_ids_day = set([os.path.basename(fn)[ind0:ind1] for fn in dayfiles])
             if station_ids_sitemeta != station_ids_day:
