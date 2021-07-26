@@ -1,7 +1,7 @@
 """
 Script to check consistency of the processed files created by calc_trends.py,
 calc_trends_o3.py and calc_trends_pr.py.
-For each  component, it checks if trend output files and data files contain
+For each component, it checks if trend output files and data files contain
 the same stations as in sitemeta, and if observations and model exist in
 the same months in the monthly time series.
 """
@@ -17,58 +17,50 @@ from calc_trends_o3 import PERECENTILES
 from constants import SEASONS
 
 
-def _print_set_diff(set1, set2):
-    set1only = set1.difference(set2)
-    set2only = set2.difference(set1)
-    print('Only in first:', set1only)
-    print('Only in second:', set2only)
-    return
-
-
 def check_consistency(var_name, data_repo_folder):
     """
-    Do some simple checks that output is consistent
+    Do simple checks that output created by calc_trends scripts is consistent
+
+    Any inconsistencied discovered will be printed.
+
+    NB: Not all inconsistencies mean that something is wrong. If not all
+    stations that exist in sitemeta are found in the trends file or trends
+    time series, it could be because they have too little data coverage.
+    However, if model and observations are not NaN at the same times, it is
+    a bug.
+
+    Parameters
+    ----------
+    var_name : string
+        The pyaerocom variable name to check
+    data_repo_folder : string
+        Path to the repository where the output to check has been saved
+        (either the usual data repo or the relaxed data repo)
     """
-
-    print('\n  %s' % var_name)
-
     lenvn = len(var_name)
-    sitemeta_file = os.path.join(data_repo_folder, 'obs_output', 'sitemeta_%s.csv' % var_name)
 
+    # Check which stations exist in the sitemeta file
+    sitemeta_file = os.path.join(data_repo_folder, 'obs_output', 'sitemeta_%s.csv' % var_name)
     df = pd.read_csv(sitemeta_file, sep=',')
     station_ids_sitemeta = set(df['station_id'].values)
     nst = len(station_ids_sitemeta)
 
-    print('\nFound %d stations in %s:' % (nst, sitemeta_file))
-    #print(station_ids_sitemeta)
-
-    # Check for specific stations in sitemeta
-    # underlined in e-mail from Wenche
-    """#station_pres = ['AT0005', 'CH0001', 'CH0005', 'DK0008', 'NO0002R;NO0001R', 'NO0039', 'NO0042', 'SK0002']
-    # Not underlined
-    station_pres = ['AT0048', 'DE0001', 'DE0003', 'DK0005', 'FI0036', 'IE0001']
-    for sstring in station_pres:
-        print('Searching for "%s"' % sstring)
-        for sid in list(station_ids_sitemeta):
-            if sid.startswith(sstring):
-                print('  Found it in sitemeta as "%s"' % sid)
-    sys.exit(0)"""
+    print('\nFound %d stations in %s' % (nst, sitemeta_file))
 
     # Check that the same stations are in trends and data files as in sitemeta
-    print('Checking that stations appearing in sitemeta are the same as appearing elsewhere...')
     for subf in ['obs_output', 'mod_output']:
         # read trends file
         trends_file = os.path.join(data_repo_folder, subf, 'trends_%s.csv' % var_name)
         df_trend = pd.read_csv(trends_file, sep=',')
-        # Find monthly data files
         if var_name == 'vmro3max':
+            # Find daily files for ozone
             sstr_dayfiles = os.path.join(data_repo_folder, subf, 'data_%s/data_%s_*_daily.csv' % (var_name, var_name))
             dayfiles = glob.glob(sstr_dayfiles)
             ind0 = lenvn + 6
             ind1 = -10
             station_ids_day = set([os.path.basename(fn)[ind0:ind1] for fn in dayfiles])
-            if station_ids_sitemeta != station_ids_day:
-                print('Daily files in %s not the same as in sitemeta' % subf)
+            if station_ids_day != station_ids_sitemeta:
+                print('Daily files in %s does not have the same stations as in sitemeta' % subf)
                 _print_set_diff(station_ids_day, station_ids_sitemeta)
             # For each period and percentile, find trends data files and trends
             for per in PERIODS:
@@ -81,25 +73,24 @@ def check_consistency(var_name, data_repo_folder):
                     ind0 = lenvn + 1
                     ind1 = -25
                     station_ids_trenddat = set([os.path.basename(fn)[ind0:ind1] for fn in trend_files])
-                    if station_ids_sitemeta != station_ids_trenddat:
-                        print('Trend data files in %s for period %04d-%04d, percentile %d not the same as sitemeta' % (subf, y0, y1, perc))
+                    if station_ids_trenddat != station_ids_sitemeta:
+                        print('Trend time series files in %s for period %04d-%04d, percentile %d, does not have the same stations as sitemeta' % (subf, y0, y1, perc))
                         _print_set_diff(station_ids_trenddat, station_ids_sitemeta)
                     # Find the trends of this data
                     cur_dft = df_trend.loc[(df_trend['percentile'] == perc) & (df_trend['period'] == per_str)]
                     station_ids_trendsf = set(cur_dft['station_id'].values)
-                    if station_ids_sitemeta != station_ids_trendsf:
-                        print('Trends file in %s does not include the same stations as sitemeta for period %04d-%04d, percentile %d' % (subf, y0, y1, perc))
-                        _print_set_diff(station_ids_trendsf, station_ids_sitemeta)
+                    if station_ids_trendsf != station_ids_trenddat:
+                        print('Trends file in %s does not include the same stations as the trend time series for period %04d-%04d, percentile %d' % (subf, y0, y1, perc))
+                        _print_set_diff(station_ids_trendsf, station_ids_trenddat)
         else:
+            # Find monthly data files
             sstr_monthfiles = os.path.join(data_repo_folder, subf, 'data_%s/data_%s_*_monthly.csv' % (var_name, var_name))
             monthly_files = glob.glob(sstr_monthfiles)
             ind0 = lenvn + 6
             ind1 = -12
             station_ids_month = set([os.path.basename(fn)[ind0:ind1] for fn in monthly_files])
-            #print('\nMonthly files in %s:' % subf)
-            #print(station_ids_month)
-            if station_ids_sitemeta != station_ids_month:
-                print('Monthly files in %s not the same as in sitemeta' % subf)
+            if station_ids_month != station_ids_sitemeta:
+                print('Monthly files in %s does not have the same stations as in sitemeta' % subf)
                 _print_set_diff(station_ids_month, station_ids_sitemeta)
             # For each period and season, find trends data files and trends
             for per in PERIODS:
@@ -112,19 +103,18 @@ def check_consistency(var_name, data_repo_folder):
                     ind0 = lenvn + 1
                     ind1 = -len(season) - 22
                     station_ids_trenddat = set([os.path.basename(fn)[ind0:ind1] for fn in trend_files])
-                    if station_ids_sitemeta != station_ids_trenddat:
-                        print('Trend data files in %s for period %04d-%04d, season %s not the same as sitemeta' % (subf, y0, y1, season))
+                    if station_ids_trenddat != station_ids_sitemeta:
+                        print('Trend time series files in %s for period %04d-%04d, season %s, does not have the same stations as sitemeta' % (subf, y0, y1, season))
                         _print_set_diff(station_ids_trenddat, station_ids_sitemeta)
                     # Find the trends of this data
                     cur_dft = df_trend.loc[(df_trend['season'] == season) & (df_trend['period'] == per_str)]
                     station_ids_trendsf = set(cur_dft['station_id'].values)
-                    if station_ids_sitemeta != station_ids_trendsf:
-                        print('Trends file in %s does not include the same stations as sitemeta for period %04d-%04d, season %s' % (subf, y0, y1, season))
-                        _print_set_diff(station_ids_trendsf, station_ids_sitemeta)
-    print('All data output locations checked')
+                    if station_ids_trendsf != station_ids_trenddat:
+                        print('Trends file in %s does not include the same stations as the trend time series for period %04d-%04d, season %s' % (subf, y0, y1, season))
+                        _print_set_diff(station_ids_trendsf, station_ids_trenddat)
 
     if var_name == 'vmro3max':
-        print('Checking that days with data are the same in observations and model...')
+        # Check if any stations have different days with data for model than observations
         for station_id in station_ids_sitemeta:
             dayfile_obs = os.path.join(data_repo_folder, 'obs_output', 'data_%s/%s_%s_daily.csv' % (var_name, var_name, station_id))
             dayfile_mod = os.path.join(data_repo_folder, 'mod_output', 'data_%s/%s_%s_daily.csv' % (var_name, var_name, station_id))
@@ -139,11 +129,8 @@ def check_consistency(var_name, data_repo_folder):
                     nnan_mod = np.sum(modnan)
                     ntot = len(obsnan)
                     print('  - %s does not have NaNs in the same days in observations and model. In obs: %d/%d NaNs. In mod: %d/%d NaN' % (station_id, nnan_obs, ntot, nnan_mod, ntot))
-                    #pd.set_option('display.max_rows', 1000)
-                    #print(df[:])
-        print('Done checking mod-vs-obs consistency')
     else:
-        print('Checking that months with data are the same in observations and model...')
+        # Check if any stations have different months with data for model than observations
         for station_id in station_ids_sitemeta:
             monthfile_obs = os.path.join(data_repo_folder, 'obs_output', 'data_%s/data_%s_%s_monthly.csv' % (var_name, var_name, station_id))
             monthfile_mod = os.path.join(data_repo_folder, 'mod_output', 'data_%s/data_%s_%s_monthly.csv' % (var_name, var_name, station_id))
@@ -158,16 +145,20 @@ def check_consistency(var_name, data_repo_folder):
                     nnan_mod = np.sum(modnan)
                     ntot = len(obsnan)
                     print('  - %s does not have NaNs in the same months in observations and model. In obs: %d/%d NaNs. In mod: %d/%d NaN' % (station_id, nnan_obs, ntot, nnan_mod, ntot))
-                    #pd.set_option('display.max_rows', 1000)
-                    #print(df[:])
-        print('Done checking mod-vs-obs consistency')
+    return
+
+
+def _print_set_diff(set1, set2):
+    set1only = set1.difference(set2)
+    set2only = set2.difference(set1)
+    print('Only in first:', set1only)
+    print('Only in second:', set2only)
     return
 
 
 if __name__ == '__main__':
     data_repo = '/home/eivindgw/code_work/emep_trends/emep_trends_2021_data'
-    #data_repo = '/home/eivindgw/code_work/emep_trends/tmp_oldso2'
-    #data_repo = '/home/eivindgw/testdata/emep_trends_2021_data'
+    #data_repo = '/home/eivindgw/code_work/emep_trends/emep_trends_2021_data_relaxed'
     variables = [
         'concno2',
         'concso2',
@@ -198,5 +189,6 @@ if __name__ == '__main__':
         'pr'
         ]
     for var in variables:
+        print('\n  %s' % var)
         check_consistency(var, data_repo)
     print('Done.')

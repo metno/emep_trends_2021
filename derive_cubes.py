@@ -4,7 +4,7 @@ Module for calculation of derived variables from EMEP variables
 from pyaerocom.io.aux_read_cubes import add_cubes
 from pyaerocom.molmasses import get_molmass
 
-# Molar masses of Nitrogen, Oxygen and Hydrogen
+# Molar masses of Nitrogen, Oxygen and Hydrogen single atoms
 M_N = 14.006
 M_O = 15.999
 M_H = 1.007
@@ -276,7 +276,7 @@ def calc_concNno3pm10(concno3f, concno3c):
 
 def fix_ecunits(concCecpm25):
     """
-    Set units of elemental carbon to ug C m-2 instead of ug m-2.
+    Set units of elemental carbon to ug C m-3 instead of ug m-3.
 
     Elemental carbon is assumed to be pure C, so no modification of the values
     of the data are needed. Therefore no new object is created. Modification of

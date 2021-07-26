@@ -15,8 +15,8 @@ from constants import PERIODS, EBAS_ID, EBAS_LOCAL
 from variables import ALL_EBAS_VARS
 
 # email with Sverre and David on 22 June 2021
-DEFAULT_RESAMPLE_CONSTRAINTS = dict(yearly     =   dict(daily      = 330),
-                                    daily      =   dict(hourly     = 18))
+RESAMPLE_CONSTRAINTS = dict(yearly     =   dict(daily      = 330),
+                            daily      =   dict(hourly     = 18))
 
 # daily to yearly will be added below for each percentile
 RESAMPLE_HOW = dict(daily=dict(hourly='max'))
@@ -62,6 +62,7 @@ PFOLDER_DATA_REPOS = '../'
 #PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
 
 if __name__ == '__main__':
+
     # Define output directories
     DATAREPO_DIR = os.path.join(PFOLDER_DATA_REPOS, 'emep_trends_2021_data')
     if not os.path.exists(DATAREPO_DIR):
@@ -98,6 +99,7 @@ if __name__ == '__main__':
     # delete previous output
     clear_output(OBS_OUTPUT_DIR, VAR_DMAX)
     clear_output(MODEL_OUTPUT_DIR, VAR_DMAX)
+
     sitemeta = []
     obs_trendtab = []
     mod_trendtab = []
@@ -111,11 +113,10 @@ if __name__ == '__main__':
     mdata = read_model(VAR_DMAX, get_modelfile, start_yr, stop_yr, var_info)
 
     tst = 'daily'
-
     coldata = pya.colocation.colocate_gridded_ungridded(
                 mdata, data, ts_type=tst, start=start_yr, stop=stop_yr,
                 var_ref=VAR_ORIG, colocate_time=True, resample_how=RESAMPLE_HOW,
-                min_num_obs=DEFAULT_RESAMPLE_CONSTRAINTS
+                min_num_obs=RESAMPLE_CONSTRAINTS
                 )
 
     # Loop over stations in colocated data
@@ -135,7 +136,7 @@ if __name__ == '__main__':
         sitedata_for_meta = data.to_station_data(
             site, VAR_ORIG, start=int(start_yr), stop=int(stop_yr)+1,
             resample_how=RESAMPLE_HOW,
-            min_num_obs=DEFAULT_RESAMPLE_CONSTRAINTS
+            min_num_obs=RESAMPLE_CONSTRAINTS
         )
         site_id = sitedata_for_meta.station_id
 
@@ -166,7 +167,7 @@ if __name__ == '__main__':
         mod_siteout = os.path.join(mod_subdir, fname)
         mod_ts.to_csv(mod_siteout)
 
-        # Create stationdata objects with the time series
+        # Create StationData objects with the time series
         varinfo = {VAR_DMAX: {'ts_type': tst}}
         obs_site = pya.StationData(var_info=varinfo)
         obs_site[VAR_DMAX] = obs_data
@@ -176,17 +177,18 @@ if __name__ == '__main__':
         # Go through all percentiles and create trend analysis
         tst_trend = 'yearly'
         for percentile in PERECENTILES:
+            # Create yearly time series of this percentile
             rs_how = get_rs_how(percentile)
             try:
                 obs_site_trend = obs_site.resample_time(
                     var_name=VAR_DMAX,
                     ts_type=tst_trend,
-                    min_num_obs=DEFAULT_RESAMPLE_CONSTRAINTS,
+                    min_num_obs=RESAMPLE_CONSTRAINTS,
                     how=rs_how, inplace=False)
                 mod_site_trend = mod_site.resample_time(
                     var_name=VAR_DMAX,
                     ts_type=tst_trend,
-                    min_num_obs=DEFAULT_RESAMPLE_CONSTRAINTS,
+                    min_num_obs=RESAMPLE_CONSTRAINTS,
                     how=rs_how, inplace=False)
             except pya.exceptions.TemporalResolutionError:
                 continue  # lower res than daily ?????????????????????
@@ -196,6 +198,7 @@ if __name__ == '__main__':
             if len(obs_ts_perc) == 0 or np.isnan(obs_ts_perc).all():  # skip
                 continue
 
+            # Calculate trends
             te = pya.trends_engine.TrendsEngine
 
             for (start, stop, min_yrs) in PERIODS:

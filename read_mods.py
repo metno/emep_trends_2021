@@ -53,25 +53,25 @@ EMEP_VAR_UNITS = {
 
 CALCULATE_HOW = {
     'concNtnh': {'req_vars': ['concnh3', 'concnh4'],
-                    'function': der.calc_concNtnh},
+                 'function': der.calc_concNtnh},
     'concco': {'req_vars': ['vmrco'],
-                'function': der.conc_from_vmr_STP},
+               'function': der.conc_from_vmr_STP},
     'concNtno3': {'req_vars': ['conchno3', 'concno3f', 'concno3c'],
-                    'function': der.calc_concNtno3},
+                  'function': der.calc_concNtno3},
     'concNnh3': {'req_vars': ['concnh3'],
-                    'function': der.calc_concNnh3},
+                 'function': der.calc_concNnh3},
     'concNnh4': {'req_vars': ['concnh4'],
-                    'function': der.calc_concNnh4},
+                 'function': der.calc_concNnh4},
     'concNhno3': {'req_vars': ['conchno3'],
-                    'function': der.calc_concNhno3},
-    'concNno3pm25': {'req_vars': ['concno3f', 'concno3c'],  # NB: fine before coarse!
-                        'function': der.calc_concNno3pm25},
+                  'function': der.calc_concNhno3},
+    'concNno3pm25': {'req_vars': ['concno3f', 'concno3c'],
+                     'function': der.calc_concNno3pm25},
     'concNno3pm10': {'req_vars': ['concno3f', 'concno3c'],
-                        'function': der.calc_concNno3pm10},
+                     'function': der.calc_concNno3pm10},
     'concno3pm25': {'req_vars': ['concno3f', 'concno3c'],
                     'function': der.calc_concno3pm25},
     'conchcho': {'req_vars': ['vmrhcho'],
-                    'function': der.conc_from_vmr_STP},
+                 'function': der.conc_from_vmr_STP},
     'concglyoxal': {'req_vars': ['vmrglyoxal'],
                     'function': der.conc_from_vmr_STP},
     'concCecpm25': {'req_vars': ['concCecpm25'],
@@ -111,7 +111,7 @@ def read_model(var, getfile, start_yr, stop_yr, var_info, calc_how={}):
     Parameters
     ----------
     var : string
-        Variable name (in pyaerocom).
+        Variable name (as in pyaerocom).
     getfile : function (int, str) -> str
         Function to get full path to the model data file for a specified year.
         First input argument should be the year and second should be the data
@@ -119,19 +119,20 @@ def read_model(var, getfile, start_yr, stop_yr, var_info, calc_how={}):
     start_yr : string or int
         Start year as sting or int.
     stop_yr : string or int
-        Stop year as sting or int.
+        Stop year as sting or int (stop_yr is not included).
     var_info : dict
         Dict of dicts of variable metadata/info. Needs to have a key for var
         which has at least the keys "units" and "data_freq".
         It is verified that the final cube has units equivalent to "units",
-        and "data_freq" is used as input to "getfile".
+        and "data_freq" is used as second input to "getfile".
     calc_how : dict, optional
-        If var is a variable that can not be read directly from the model data,
-        calc_how should be provided. The dict must then contain an entry for the
-        variable you want to process which must be another dict with keys "req_vars"
+        If var is a variable that cannot be read directly from the model data,
+        calc_how should be provided. The dict must then contain an entry for
+        var which must be another dict with keys "req_vars"
         and "function". "req_vars" must be a list of variable names and "function"
-        must be a fuction that calculates the variable and returns an iris.cubc.Cube
-        object. This returned cube object must have properties "var_name"=var and
+        must be a fuction that calculates the variable from the "req_vars" given
+        as iris.cube.Cube objects (in that order) and returns an iris.cube.Cube
+        object. This returned Cube must have properties "var_name"=var and
         units equivalent to var_info[var]['units'].
 
     Returns
@@ -148,10 +149,9 @@ def read_model(var, getfile, start_yr, stop_yr, var_info, calc_how={}):
         calculate_how = {'req_vars': [var], 'function': dummy}
 
     data_freq = var_info[var]['data_freq']
+
     data = []
-
     years = range(int(start_yr), int(stop_yr))
-
     for year in tqdm.tqdm(years, desc=var):
         infile = getfile(year, data_freq)
         if not os.path.exists(infile):

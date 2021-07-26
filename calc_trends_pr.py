@@ -29,7 +29,11 @@ PFOLDER_DATA_REPOS = '../'
 #PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
 
 if __name__ == '__main__':
+
+    # Define output directories
     DATAREPO_DIR = os.path.join(PFOLDER_DATA_REPOS, 'emep_trends_2021_data')
+    if not os.path.exists(DATAREPO_DIR):
+        raise IOError('Data repository folder "%s" does not exist' % DATAREPO_DIR)
 
     OBS_OUTPUT_DIR = os.path.join(DATAREPO_DIR, 'obs_output')
     MODEL_OUTPUT_DIR = os.path.join(DATAREPO_DIR, 'mod_output')
@@ -76,53 +80,38 @@ if __name__ == '__main__':
 
     # Colocate model and observations at monthly resolution
     # (for now, do not colocated at each time before resampling)
+    tst = 'monthly'
     coldata = pya.colocation.colocate_gridded_ungridded(
-                mdata, data, ts_type='monthly', start=start_yr, stop=stop_yr,
+                mdata, data, ts_type=tst, start=start_yr, stop=stop_yr,
                 colocate_time=False, resample_how=RESAMPLE_HOW,
                 harmonise_units=False,
                 min_num_obs=RESAMPLE_CONSTRAINTS
                 )
 
-    #loop over stations in colcated data
-    # NB: monthly summed precipitation is used, and in trend analysis it is still monthly sums
+    # Loop over stations in colcated data
     sitelist = list(coldata.data.station_name.values)
     for site in tqdm.tqdm(sitelist, desc=VAR):
-        tst = 'monthly'
 
+        # Pick out monthly precipitation time series at this station
         obs_site = coldata.data.sel(station_name=site).isel(data_source=0).to_series()
         mod_site = coldata.data.sel(station_name=site).isel(data_source=1).to_series()
-
         # invalidate model at months with no observed monthly mean
         noobs = np.isnan(obs_site.values)
         mod_site = mod_site.where(~noobs, other=np.nan)
-
         obs_ts = obs_site.loc[start_yr:stop_yr]
         mod_ts = mod_site.loc[start_yr:stop_yr]
         if len(obs_ts) == 0 or np.isnan(obs_ts).all(): # skip
             continue
-        obs_subdir = os.path.join(OBS_OUTPUT_DIR, f'data_{VAR}')
-        mod_subdir = os.path.join(MODEL_OUTPUT_DIR, f'data_{VAR}')
 
+        # Read metadata
         sitedata_for_meta = data.to_station_data(
             site, VAR, start=int(start_yr), stop=int(stop_yr)+1,
             resample_how=RESAMPLE_HOW,
             min_num_obs=RESAMPLE_CONSTRAINTS
         )
-        # Set unit to mm month-1 since this is the result of the summing in the colocated data
-        coldata_unit = 'mm month-1'
-
         site_id = sitedata_for_meta.station_id
-        os.makedirs(obs_subdir, exist_ok=True)
-        os.makedirs(mod_subdir, exist_ok=True)
-        fname = f'data_{VAR}_{site_id}_{tst}.csv'
-
-        obs_siteout = os.path.join(obs_subdir, fname)
-        obs_ts.to_csv(obs_siteout)
-
-        mod_siteout = os.path.join(mod_subdir, fname)
-        mod_ts.to_csv(mod_siteout)
-
-        #unit = sitedata_for_meta.get_unit(VAR)  # don't use this, as it is just mm
+        # set unit to mm month-1 since this is the result of the summing in the colocated data
+        coldata_unit = 'mm month-1'
         sitemeta.append([VAR,
                          site_id,
                          sitedata_for_meta.station_name,
@@ -134,6 +123,22 @@ if __name__ == '__main__':
                          sitedata_for_meta.framework,
                          sitedata_for_meta.var_info[VAR]['matrix']
                          ])
+
+        # Save monthly time series to files
+        obs_subdir = os.path.join(OBS_OUTPUT_DIR, f'data_{VAR}')
+        mod_subdir = os.path.join(MODEL_OUTPUT_DIR, f'data_{VAR}')
+        os.makedirs(obs_subdir, exist_ok=True)
+        os.makedirs(mod_subdir, exist_ok=True)
+
+        fname = f'data_{VAR}_{site_id}_{tst}.csv'
+
+        obs_siteout = os.path.join(obs_subdir, fname)
+        obs_ts.to_csv(obs_siteout)
+
+        mod_siteout = os.path.join(mod_subdir, fname)
+        mod_ts.to_csv(mod_siteout)
+
+        # Calculate trends at this station
 
         te = pya.trends_engine.TrendsEngine
 
@@ -165,6 +170,8 @@ if __name__ == '__main__':
                     mod_trend['data'].to_csv(os.path.join(mod_subdir, fname))
                 except AttributeError:
                     pass
+
+    # Save sitemeta and trend results
 
     metadf = pd.DataFrame(sitemeta,
                           columns=['var',

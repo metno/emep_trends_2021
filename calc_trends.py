@@ -16,17 +16,17 @@ from read_mods import read_model, get_modelfile, CALCULATE_HOW, EMEP_VAR_UNITS
 from variables import ALL_EBAS_VARS
 from constants import PERIODS, EBAS_ID, EBAS_LOCAL, SEASONS
 
-DEFAULT_RESAMPLE_CONSTRAINTS = dict(monthly     =   dict(daily      = 21, weekly = 3),
-                                    daily       =   dict(hourly     = 18))
+STRICT_RESAMPLE_CONSTRAINTS = dict(monthly     =   dict(daily      = 21, weekly = 3),
+                                   daily       =   dict(hourly     = 18))
 
 RELAXED_RESAMPLE_CONSTRAINTS = dict(monthly     =   dict(daily      = 4, weekly = 2),
                                     daily       =   dict(hourly     = 18))
 
-DEFAULT_RESAMPLE_HOW = 'mean'
+RESAMPLE_HOW = 'mean'
 
 EBAS_VARS = [
-            # 'concno2',
-             'concso2',
+             'concno2',
+            # 'concso2',
             # 'concco',
             # 'vmrc2h6',
             # 'vmrc2h4',
@@ -60,17 +60,16 @@ EBAS_BASE_FILTERS = dict(set_flags_nan   = True,
 PFOLDER_DATA_REPOS = '../'
 #PFOLDER_DATA_REPOS = '/home/eivindgw/testdata/'  # !!!!!!!!!!!!!! for testing
 
-DATA_FREQ = 'day'
-
 ISRELAXED = False
 
 if __name__ == '__main__':
+
     if ISRELAXED:
         DATAREPO_DIR = os.path.join(PFOLDER_DATA_REPOS, 'emep_trends_2021_data_relaxed')
         RESAMPLE_CONSTRAINTS = RELAXED_RESAMPLE_CONSTRAINTS
     else:
         DATAREPO_DIR = os.path.join(PFOLDER_DATA_REPOS, 'emep_trends_2021_data')
-        RESAMPLE_CONSTRAINTS = DEFAULT_RESAMPLE_CONSTRAINTS
+        RESAMPLE_CONSTRAINTS = STRICT_RESAMPLE_CONSTRAINTS
     if not os.path.exists(DATAREPO_DIR):
         raise IOError('Data repository folder "%s" does not exist' % DATAREPO_DIR)
 
@@ -105,52 +104,43 @@ if __name__ == '__main__':
         # delete former output for that variable if it exists
         clear_output(OBS_OUTPUT_DIR, var)
         clear_output(MODEL_OUTPUT_DIR, var)
+
         sitemeta = []
         obs_trendtab = []
         mod_trendtab = []
 
         data = oreader.read(vars_to_retrieve=var)
         data = data.apply_filters(**EBAS_BASE_FILTERS)
-        #data = data.apply_filters(station_name='Birkenes II')
-        var_info = {var: {'units': EMEP_VAR_UNITS[var], 'data_freq': DATA_FREQ}}
+        #data = data.apply_filters(station_name='Glen Dye')  #!!!!!!!! for testing
+        var_info = {var: {'units': EMEP_VAR_UNITS[var], 'data_freq': 'day'}}
         mdata = read_model(var, get_modelfile, start_yr, stop_yr, var_info, CALCULATE_HOW)
 
+        tst = 'monthly'
         coldata = pya.colocation.colocate_gridded_ungridded(
-                    mdata, data, ts_type='monthly', start=start_yr, stop=stop_yr,
-                    colocate_time=True, resample_how=DEFAULT_RESAMPLE_HOW,
+                    mdata, data, ts_type=tst, start=start_yr, stop=stop_yr,
+                    colocate_time=True, resample_how=RESAMPLE_HOW,
                     min_num_obs=RESAMPLE_CONSTRAINTS
                     )
 
-        #loop over stations in colcated data
+        # Loop over stations in colcated data
         sitelist = list(coldata.data.station_name.values)
         for site in tqdm.tqdm(sitelist, desc=var):
-            tst = 'monthly'
 
+            # Pick out monthly time series from observations and model at this station
             obs_site = coldata.data.sel(station_name=site).isel(data_source=0).to_series()
             mod_site = coldata.data.sel(station_name=site).isel(data_source=1).to_series()
             obs_ts = obs_site.loc[start_yr:stop_yr]
             mod_ts = mod_site.loc[start_yr:stop_yr]
             if len(obs_ts) == 0 or np.isnan(obs_ts).all(): # skip
                 continue
-            obs_subdir = os.path.join(OBS_OUTPUT_DIR, f'data_{var}')
-            mod_subdir = os.path.join(MODEL_OUTPUT_DIR, f'data_{var}')
 
+            # Read metadata
             sitedata_for_meta = data.to_station_data(
                 site, var, start=int(start_yr), stop=int(stop_yr)+1,
-                resample_how=DEFAULT_RESAMPLE_HOW,
+                resample_how=RESAMPLE_HOW,
                 min_num_obs=RESAMPLE_CONSTRAINTS
             )
-
             site_id = sitedata_for_meta.station_id
-            os.makedirs(obs_subdir, exist_ok=True)
-            os.makedirs(mod_subdir, exist_ok=True)
-            fname = f'data_{var}_{site_id}_{tst}.csv'
-
-            obs_siteout = os.path.join(obs_subdir, fname)
-            obs_ts.to_csv(obs_siteout)
-
-            mod_siteout = os.path.join(mod_subdir, fname)
-            mod_ts.to_csv(mod_siteout)
 
             unit = sitedata_for_meta.get_unit(var)
             sitemeta.append([var,
@@ -164,6 +154,22 @@ if __name__ == '__main__':
                              sitedata_for_meta.framework,
                              sitedata_for_meta.var_info[var]['matrix']
                              ])
+
+            # Save monthly time series to files
+            obs_subdir = os.path.join(OBS_OUTPUT_DIR, f'data_{var}')
+            mod_subdir = os.path.join(MODEL_OUTPUT_DIR, f'data_{var}')
+            os.makedirs(obs_subdir, exist_ok=True)
+            os.makedirs(mod_subdir, exist_ok=True)
+
+            fname = f'data_{var}_{site_id}_{tst}.csv'
+
+            obs_siteout = os.path.join(obs_subdir, fname)
+            obs_ts.to_csv(obs_siteout)
+
+            mod_siteout = os.path.join(mod_subdir, fname)
+            mod_ts.to_csv(mod_siteout)
+
+            # Calculate trends at this station
 
             te = pya.trends_engine.TrendsEngine
 
@@ -195,6 +201,8 @@ if __name__ == '__main__':
                         mod_trend['data'].to_csv(os.path.join(mod_subdir, fname))
                     except AttributeError:
                         pass
+
+        # Save sitemeta and trend results
 
         metadf = pd.DataFrame(sitemeta,
                               columns=['var',

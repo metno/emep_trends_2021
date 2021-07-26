@@ -1,5 +1,6 @@
-# Calculate daily time series at stations from EMEP model grid output
-import sys
+"""
+Calculate daily time series at stations from EMEP model grid output
+"""
 import os
 
 import pandas as pd
@@ -43,6 +44,7 @@ if __name__ == '__main__':
     DATAREPO_DIR = os.path.join(PFOLDER_DATA_REPOS, 'emep_trends_2021_data')
     if not os.path.exists(DATAREPO_DIR):
         raise IOError('Data repository folder "%s" does not exist' % DATAREPO_DIR)
+
     # Create pm25 speciation output folder
     PM25SPEC_MOD_OUTPUT_DIR = os.path.join(DATAREPO_DIR, 'mod_pm25spec')
     if not os.path.exists(PM25SPEC_MOD_OUTPUT_DIR):
@@ -53,7 +55,7 @@ if __name__ == '__main__':
 
     # Read station metadata file
     indata = pd.read_fwf(FILE_INDATA, colspecs=INDATA_COLSPECS)
-    indata = indata[~indata['Code'].str.contains('--')]  # remove ---- row
+    indata = indata[~indata['Code'].str.contains('--')]  # remove row just below headings
     indata['longitude'] = pd.to_numeric(indata['longitude'])
     indata['latitude'] = pd.to_numeric(indata['latitude'])
     indata.reset_index(drop=True, inplace=True)
