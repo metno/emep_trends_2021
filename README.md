@@ -15,7 +15,7 @@ https://github.com/metno/emep_trends_2021_data
 
 The data with relaxed constraints is stored in: 
 
-https://github.com/metno/emep_trends_2021_data_relaxed.
+https://github.com/metno/emep_trends_2021_data_relaxed
 
 The pyaerocom version used for the processing can be downloaded here:
 
