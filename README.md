@@ -9,4 +9,14 @@ Resampling from hourly to daily is done for days with at least 18 hours of obser
 - strict constraint: At least 21 days or 3 weeks
 - relaxed constraint: At least 4 days or 2 weeks
 
-Output data from the analysis is stored in separate repositories from this one. The data with strict resampling constraints is stored in https://github.com/metno/emep_trends_2021_data, and the data with relaxed constraints is store in https://github.com/metno/emep_trends_2021_data_relaxed.
+Output data from the analysis is stored in separate repositories from this one. The data with strict resampling constraints is stored in:   
+
+https://github.com/metno/emep_trends_2021_data
+
+The data with relaxed constraints is stored in: 
+
+https://github.com/metno/emep_trends_2021_data_relaxed.
+
+The pyaerocom version used for the processing can be downloaded here:
+
+https://github.com/metno/pyaerocom/releases/tag/v0.12.0dev2
